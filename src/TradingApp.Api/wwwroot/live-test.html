@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<title>SignalR Live Test</title>
+<style>
+  body { font-family: monospace; background: #0b1220; color: #e6edf3; padding: 20px; }
+  h1 { color: #4fc3f7; font-size: 18px; }
+  #status { padding: 8px 12px; border-radius: 6px; background: #172239; display: inline-block; margin-bottom: 16px; }
+  .ok { color: #4ade80; }
+  .err { color: #f87171; }
+  #log { background: #111a2e; padding: 12px; border-radius: 8px; max-height: 70vh; overflow-y: auto; font-size: 12px; }
+  .row { padding: 4px 0; border-bottom: 1px solid #1f2a44; }
+  .sym { color: #fbbf24; font-weight: bold; }
+  .price { color: #4ade80; }
+  .pct-up { color: #4ade80; }
+  .pct-down { color: #f87171; }
+</style>
+</head>
+<body>
+  <h1>SignalR Canlı Fiyat Testi</h1>
+  <div id="status">Bağlanıyor…</div>
+  <div id="log"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+  <script>
+    const status = document.getElementById('status');
+    const log = document.getElementById('log');
+
+    const conn = new signalR.HubConnectionBuilder()
+      .withUrl("http://localhost:5000/hubs/market")
+      .withAutomaticReconnect()
+      .configureLogging(signalR.LogLevel.Information)
+      .build();
+
+    conn.on("MarketPriceUpdated", (u) => {
+      const cls = u.changePercent >= 0 ? 'pct-up' : 'pct-down';
+      const sign = u.changePercent >= 0 ? '+' : '';
+      const line = document.createElement('div');
+      line.className = 'row';
+      line.innerHTML = `<span class="sym">${u.symbol}</span>
+        <span class="price">${u.price}</span>
+        <span class="${cls}">${sign}${u.changePercent.toFixed(2)}%</span>
+        <span style="color:#8b9bb4">vol: ${u.dailyVolume.toFixed(2)}</span>`;
+      log.prepend(line);
+      while (log.children.length > 50) log.removeChild(log.lastChild);
+    });
+
+    conn.start()
+      .then(() => { status.textContent = "✅ Bağlı"; status.classList.add('ok'); })
+      .catch(err => { status.textContent = "❌ " + err; status.classList.add('err'); });
+
+    conn.onreconnecting(() => status.textContent = "🔄 Yeniden bağlanıyor…");
+    conn.onreconnected(() => { status.textContent = "✅ Tekrar bağlı"; });
+    conn.onclose(() => status.textContent = "❌ Kapandı");
+  </script>
+</body>
+</html>

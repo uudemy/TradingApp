@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TradingApp.Api/TradingApp.Api.csproj" />
+    <Project Path="src/TradingApp.Application/TradingApp.Application.csproj" />
+    <Project Path="src/TradingApp.Domain/TradingApp.Domain.csproj" />
+    <Project Path="src/TradingApp.Infrastructure/TradingApp.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/TradingApp.ApiTests/TradingApp.ApiTests.csproj" />
+    <Project Path="tests/TradingApp.IntegrationTests/TradingApp.IntegrationTests.csproj" />
+    <Project Path="tests/TradingApp.UnitTests/TradingApp.UnitTests.csproj" />
+  </Folder>
+</Solution>

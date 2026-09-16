@@ -1,0 +1,43 @@
+# ---------- .NET ----------
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+*.nupkg
+*.snupkg
+
+# ---------- Secrets / Config ----------
+appsettings.Local.json
+appsettings.*.Local.json
+.env
+.env.local
+*.pfx
+*.key
+secrets.json
+
+# ---------- Logs ----------
+logs/
+*.log
+
+# ---------- Frontend ----------
+frontend/**/node_modules/
+frontend/**/dist/
+frontend/**/.vite/
+frontend/**/.env.local
+
+# ---------- IDE ----------
+.idea/
+*.swp
+*.swo
+
+# ---------- OS ----------
+.DS_Store
+Thumbs.db
+
+# ---------- DB / Backups ----------
+backups/
+*.dump
+*.sql
+!**/Migrations/*.cs

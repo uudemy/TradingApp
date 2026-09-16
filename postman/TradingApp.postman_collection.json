@@ -1,0 +1,410 @@
+{
+  "info": {
+    "_postman_id": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+    "name": "TradingApp",
+    "description": "TradingApp Demo — Phase 5B",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - System",
+      "item": [
+        {
+          "name": "Ping",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/system/ping", "host": ["{{baseUrl}}"], "path": ["api","system","ping"] }
+          }
+        },
+        {
+          "name": "Health Ready",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/health/ready", "host": ["{{baseUrl}}"], "path": ["health","ready"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success && res.data) {",
+                "  pm.environment.set('accessToken', res.data.accessToken);",
+                "  pm.environment.set('refreshToken', res.data.refreshToken);",
+                "  console.log('Tokens saved.');",
+                "}",
+                "pm.test('Status 200', () => pm.response.to.have.status(200));"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"swagger@trading.local\",\n  \"password\": \"Passw0rd!\",\n  \"firstName\": \"Swagger\",\n  \"lastName\": \"User\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/register", "host": ["{{baseUrl}}"], "path": ["api","auth","register"] }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success && res.data) {",
+                "  pm.environment.set('accessToken', res.data.accessToken);",
+                "  pm.environment.set('refreshToken', res.data.refreshToken);",
+                "}",
+                "pm.test('Status 200', () => pm.response.to.have.status(200));"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"swagger@trading.local\",\n  \"password\": \"Passw0rd!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] }
+          }
+        },
+        {
+          "name": "Login - Wrong Password",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                "const res = pm.response.json();",
+                "pm.test('invalid_credentials', () => pm.expect(res.errors).to.include('invalid_credentials'));"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"swagger@trading.local\",\n  \"password\": \"Yanlis\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/login", "host": ["{{baseUrl}}"], "path": ["api","auth","login"] }
+          }
+        },
+        {
+          "name": "Refresh",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success && res.data) {",
+                "  pm.environment.set('accessToken', res.data.accessToken);",
+                "  pm.environment.set('refreshToken', res.data.refreshToken);",
+                "}",
+                "pm.test('Status 200', () => pm.response.to.have.status(200));"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/refresh", "host": ["{{baseUrl}}"], "path": ["api","auth","refresh"] }
+          }
+        },
+        {
+          "name": "Logout",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/auth/logout", "host": ["{{baseUrl}}"], "path": ["api","auth","logout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Assets",
+      "item": [
+        {
+          "name": "Get All Assets",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "const res = pm.response.json();",
+                "pm.test('Has assets', () => pm.expect(res.data).to.be.an('array').that.is.not.empty);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/assets", "host": ["{{baseUrl}}"], "path": ["api","assets"] }
+          }
+        },
+        {
+          "name": "Get Asset BTC",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/assets/BTC", "host": ["{{baseUrl}}"], "path": ["api","assets","BTC"] }
+          }
+        },
+        {
+          "name": "Get Asset THYAO",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/assets/THYAO", "host": ["{{baseUrl}}"], "path": ["api","assets","THYAO"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Market",
+      "item": [
+        {
+          "name": "Get BTC Price",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "const res = pm.response.json();",
+                "if (res.data) { pm.environment.set('lastBtcPrice', res.data.price); console.log('BTC:', res.data.price); }"
+              ]
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/market/BTC", "host": ["{{baseUrl}}"], "path": ["api","market","BTC"] }
+          }
+        },
+        {
+          "name": "Get BTC Candles 1m",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/market/BTC/candles?interval=1m&limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","market","BTC","candles"],
+              "query": [
+                { "key": "interval", "value": "1m" },
+                { "key": "limit", "value": "50" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Wallets",
+      "item": [
+        {
+          "name": "Get My Wallets",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "const res = pm.response.json();",
+                "console.log('Wallets:', JSON.stringify(res.data));"
+              ]
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/wallets", "host": ["{{baseUrl}}"], "path": ["api","wallets"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - Orders",
+      "item": [
+        {
+          "name": "Place BUY Limit",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "const res = pm.response.json();",
+                "if (res.success && res.data) {",
+                "  pm.environment.set('lastOrderId', res.data.id);",
+                "  console.log('Order ID:', res.data.id, 'Status:', res.data.status);",
+                "}"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"THYAO\",\n  \"side\": 1,\n  \"orderType\": 2,\n  \"price\": 100,\n  \"quantity\": 10\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/orders", "host": ["{{baseUrl}}"], "path": ["api","orders"] }
+          }
+        },
+        {
+          "name": "Place Market BUY BTC",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"BTC\",\n  \"side\": 1,\n  \"orderType\": 1,\n  \"quantity\": 0.5\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/orders", "host": ["{{baseUrl}}"], "path": ["api","orders"] }
+          }
+        },
+        {
+          "name": "Get My Orders",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/orders", "host": ["{{baseUrl}}"], "path": ["api","orders"] }
+          }
+        },
+        {
+          "name": "Get My Orders - Filter Open",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders?status=Open&symbol=THYAO",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","orders"],
+              "query": [
+                { "key": "status", "value": "Open" },
+                { "key": "symbol", "value": "THYAO" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancel Last Order",
+          "event": [{
+            "listen": "test",
+            "script": { "type": "text/javascript", "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] }
+          }],
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/orders/{{lastOrderId}}", "host": ["{{baseUrl}}"], "path": ["api","orders","{{lastOrderId}}"] }
+          }
+        },
+        {
+          "name": "Place - Insufficient Balance",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                "const res = pm.response.json();",
+                "pm.test('insufficient_balance', () => pm.expect(res.errors).to.include('insufficient_balance'));"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"BTC\",\n  \"side\": 1,\n  \"orderType\": 2,\n  \"price\": 1000000,\n  \"quantity\": 100\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/orders", "host": ["{{baseUrl}}"], "path": ["api","orders"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Trades",
+      "item": [
+        {
+          "name": "Get My Trades",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/trades", "host": ["{{baseUrl}}"], "path": ["api","trades"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Portfolio",
+      "item": [
+        {
+          "name": "Get My Portfolio",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "const res = pm.response.json();",
+                "console.log('Portfolio value:', res.data.totalMarketValue);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/portfolio", "host": ["{{baseUrl}}"], "path": ["api","portfolio"] }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000" }
+  ]
+}
