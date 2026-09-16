@@ -14,7 +14,9 @@ namespace TradingApp.Infrastructure;
 using TradingApp.Infrastructure.MarketData.Options;
 using TradingApp.Infrastructure.MarketData.Yahoo;
 using Microsoft.Extensions.Logging;
-
+using TradingApp.Infrastructure.MarketData.BistDataService;
+using TradingApp.Infrastructure.MarketData.CoinMarketCap;
+using TradingApp.Infrastructure.MarketData.Stooq;
 public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructureLayer(
@@ -78,28 +80,53 @@ public static class DependencyInjection
         services.AddSingleton<SymbolMapper>();
         services.AddScoped<YahooFinanceMarketDataProvider>();
 
+                // BIST Data Service
+        services.AddHttpClient<BistDataServiceClient>();
+        services.AddScoped<BistDataServiceProvider>();
+
+        // CoinMarketCap
+        services.AddHttpClient<CoinMarketCapClient>();
+        services.AddScoped<CoinMarketCapProvider>();
+
+        // Stooq
+        services.AddHttpClient<StooqClient>();
+        services.AddScoped<StooqProvider>();
+
         // Provider seçimi + fallback
         var provider = configuration[$"{MarketDataOptions.SectionName}:Provider"] ?? "Mock";
         var fallback = configuration.GetValue<bool>($"{MarketDataOptions.SectionName}:FallbackToMock");
 
-        services.AddScoped<IMarketDataProvider>(sp =>
+              services.AddScoped<IMarketDataProvider>(sp =>
         {
             var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-            var mock = sp.GetRequiredService<MockMarketDataProvider>();
+            var log = loggerFactory.CreateLogger<FallbackMarketDataProvider>();
 
+            // Sıralı fallback zinciri
+            var chain = new List<IMarketDataProvider>();
+
+            // 1. Birincil (config'ten)
             if (string.Equals(provider, "Yahoo", StringComparison.OrdinalIgnoreCase))
-            {
-                var yahoo = sp.GetRequiredService<YahooFinanceMarketDataProvider>();
-                if (fallback)
-                {
-                    return new FallbackMarketDataProvider(
-                        yahoo, mock,
-                        loggerFactory.CreateLogger<FallbackMarketDataProvider>());
-                }
-                return yahoo;
-            }
+                chain.Add(sp.GetRequiredService<YahooFinanceMarketDataProvider>());
 
-            return mock;
+            // 2. BIST Data Service (sadece TRY assetler için ideal)
+            chain.Add(sp.GetRequiredService<BistDataServiceProvider>());
+
+            // 3. CoinMarketCap (kripto)
+            chain.Add(sp.GetRequiredService<CoinMarketCapProvider>());
+
+            // 4. Stooq (ABD hisseleri)
+            chain.Add(sp.GetRequiredService<StooqProvider>());
+
+            // 5. Mock (son çare)
+            if (fallback)
+                chain.Add(sp.GetRequiredService<MockMarketDataProvider>());
+
+            // Zinciri birleştir
+            IMarketDataProvider result = chain[0];
+            for (int i = 1; i < chain.Count; i++)
+                result = new FallbackMarketDataProvider(result, chain[i], log);
+
+            return result;
         });
 
         // Background polling (Yahoo) veya simülasyon (Mock)
