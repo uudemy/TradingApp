@@ -7,6 +7,7 @@ using TradingApp.Application.Abstractions;
 using TradingApp.Application.Common;
 using TradingApp.Application.Features.Analysis.Common;
 using TradingApp.Application.Features.Analysis.Dtos;
+using TradingApp.Application.Features.Market.Dtos;
 using TradingApp.Domain.Enums;
 
 namespace TradingApp.Application.Features.Analysis.Screener;
@@ -16,7 +17,8 @@ public sealed class ScreenerQueryHandler
 {
     private readonly IAppDbContext _db;
     private readonly IMarketDataProvider _provider;
-    private readonly IScreenerCache _cache;
+    private readonly IMarketDataCache _candleCache;
+    private readonly IScreenerCache _screenerCache;
     private readonly ILogger<ScreenerQueryHandler> _logger;
 
     private const int MaxParallelism = 8;
@@ -24,12 +26,14 @@ public sealed class ScreenerQueryHandler
     public ScreenerQueryHandler(
         IAppDbContext db,
         IMarketDataProvider provider,
-        IScreenerCache cache,
+        IMarketDataCache candleCache,
+        IScreenerCache screenerCache,
         ILogger<ScreenerQueryHandler> logger)
     {
         _db = db;
         _provider = provider;
-        _cache = cache;
+        _candleCache = candleCache;
+        _screenerCache = screenerCache;
         _logger = logger;
     }
 
@@ -43,7 +47,7 @@ public sealed class ScreenerQueryHandler
         };
 
         var key = BuildCacheKey(request, interval);
-        var cached = await _cache.GetAsync(key, ct);
+        var cached = await _screenerCache.GetAsync(key, ct);
         if (cached is not null)
         {
             _logger.LogInformation("Screener cache HIT: {Key}", key);
@@ -64,13 +68,19 @@ public sealed class ScreenerQueryHandler
 
         var semaphore = new SemaphoreSlim(MaxParallelism);
         var results = new ConcurrentBag<AnalysisScanItemDto>();
+        int candleHits = 0, candleMisses = 0;
 
         var tasks = assets.Select(async asset =>
         {
             await semaphore.WaitAsync(ct);
             try
             {
-                var candles = await _provider.GetCandlesAsync(asset.Symbol, interval, 200, ct);
+                var (candles, fromCache) = await GetCandlesCachedAsync(
+                    asset.Symbol, interval, 200, ct);
+
+                if (fromCache) Interlocked.Increment(ref candleHits);
+                else Interlocked.Increment(ref candleMisses);
+
                 if (candles.Count < 35) return;
 
                 var quotes = candles.Select(c => new Quote
@@ -110,6 +120,10 @@ public sealed class ScreenerQueryHandler
 
         await Task.WhenAll(tasks);
 
+        _logger.LogInformation(
+            "Screener candles: {Hits} cached / {Misses} fetched ({Total} total)",
+            candleHits, candleMisses, assets.Count);
+
         IEnumerable<AnalysisScanItemDto> filtered = results;
 
         if (request.MinScore.HasValue)
@@ -141,9 +155,30 @@ public sealed class ScreenerQueryHandler
             final,
             DateTimeOffset.UtcNow);
 
-        await _cache.SetAsync(key, result, CacheTtl.ScreenerResult, ct);
+        await _screenerCache.SetAsync(key, result, CacheTtl.ScreenerResult, ct);
 
         return result;
+    }
+
+    /// <summary>Candle cache'ten oku, yoksa provider'dan çek + cache'e yaz.</summary>
+    private async Task<(IReadOnlyCollection<CandleDto> candles, bool fromCache)>
+        GetCandlesCachedAsync(string symbol, string interval, int limit, CancellationToken ct)
+    {
+        var symbolUpper = symbol.ToUpperInvariant();
+
+        var cached = await _candleCache.GetCandlesAsync(symbolUpper, interval, ct);
+        if (cached is not null && cached.Count > 0)
+            return (cached, true);
+
+        var fresh = await _provider.GetCandlesAsync(symbol, interval, limit, ct);
+
+        if (fresh.Count > 0)
+        {
+            var ttl = CacheTtl.ForInterval(interval);
+            await _candleCache.SetCandlesAsync(symbolUpper, interval, fresh, ttl, ct);
+        }
+
+        return (fresh, false);
     }
 
     private static string BuildCacheKey(ScreenerQuery request, string interval)
