@@ -44,7 +44,7 @@ public sealed class BistDataServiceClient
 
         await using var stream = await resp.Content.ReadAsStreamAsync(ct);
         var payload = await JsonSerializer.DeserializeAsync<BistAllResponse>(stream, JsonOpts, ct);
-        return payload?.Data ?? new List<BistQuote>();
+        return payload?.Quotes ?? new List<BistQuote>();
     }
 
     /// <summary>Tek hisse için anlık fiyat.</summary>

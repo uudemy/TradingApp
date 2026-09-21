@@ -11,6 +11,12 @@ public sealed class PortfolioPosition : BaseEntity
     public decimal AverageCost { get; private set; }
     public decimal RealizedPnl { get; private set; }
 
+    /// <summary>Kullanıcının manuel girdiği alış tarihi (opsiyonel).</summary>
+    public DateTimeOffset? PurchaseDate { get; private set; }
+
+    /// <summary>Kullanıcının notu (opsiyonel, max 500).</summary>
+    public string? Notes { get; private set; }
+
     public decimal AvailableQuantity => Quantity - LockedQuantity;
 
     private PortfolioPosition() { } // EF
@@ -26,7 +32,41 @@ public sealed class PortfolioPosition : BaseEntity
         AverageCost = averageCost;
     }
 
-    /// <summary>Alış — weighted average cost günceller.</summary>
+    /// <summary>Manuel ekleme: mevcut pozisyona eklenir, weighted average hesaplanır.</summary>
+    public void MergeManual(decimal addQty, decimal addPrice, DateTimeOffset? purchaseDate, string? notes)
+    {
+        if (addQty <= 0) throw new DomainException("invalid_quantity", "Quantity must be positive.");
+        if (addPrice <= 0) throw new DomainException("invalid_price", "Price must be positive.");
+
+        var newQty = Quantity + addQty;
+        AverageCost = newQty == 0m
+            ? 0m
+            : ((Quantity * AverageCost) + (addQty * addPrice)) / newQty;
+        Quantity = newQty;
+
+        if (purchaseDate.HasValue) PurchaseDate = purchaseDate;
+        if (!string.IsNullOrWhiteSpace(notes)) Notes = notes.Trim();
+
+        Touch();
+    }
+
+    /// <summary>Manuel güncelleme: adet, ortalama maliyet, tarih, not yenilenir.</summary>
+    public void UpdateManual(decimal quantity, decimal averageCost, DateTimeOffset? purchaseDate, string? notes)
+    {
+        if (quantity < 0) throw new DomainException("invalid_quantity", "Quantity cannot be negative.");
+        if (averageCost < 0) throw new DomainException("invalid_cost", "Cost cannot be negative.");
+        if (LockedQuantity > quantity)
+            throw new DomainException("locked_exceeds_quantity",
+                "Cannot set quantity below locked amount.");
+
+        Quantity = quantity;
+        AverageCost = averageCost;
+        PurchaseDate = purchaseDate;
+        Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
+        Touch();
+    }
+
+    /// <summary>Alış — matching engine tarafından çağrılır.</summary>
     public void ApplyBuy(decimal qty, decimal price)
     {
         if (qty <= 0) throw new DomainException("invalid_quantity", "Buy quantity must be positive.");
@@ -40,30 +80,25 @@ public sealed class PortfolioPosition : BaseEntity
         Touch();
     }
 
-    /// <summary>SELL emri verildiğinde miktarı kilitle.</summary>
     public void LockForSell(decimal qty)
     {
         if (qty <= 0) throw new DomainException("invalid_quantity", "Lock quantity must be positive.");
         if (AvailableQuantity < qty)
             throw new DomainException("insufficient_position",
                 $"Insufficient position. Required: {qty}, Available: {AvailableQuantity}.");
-
         LockedQuantity += qty;
         Touch();
     }
 
-    /// <summary>SELL emri iptal edildiğinde kilidi çöz.</summary>
     public void UnlockFromSell(decimal qty)
     {
         if (qty <= 0) throw new DomainException("invalid_quantity", "Unlock quantity must be positive.");
         if (LockedQuantity < qty)
             throw new DomainException("invalid_lock_state", "Unlock exceeds locked.");
-
         LockedQuantity -= qty;
         Touch();
     }
 
-    /// <summary>SELL trade gerçekleştiğinde kilitli miktarı tüket, realized PnL hesapla.</summary>
     public void ApplySell(decimal qty, decimal price)
     {
         if (qty <= 0) throw new DomainException("invalid_quantity", "Sell quantity must be positive.");
@@ -81,4 +116,6 @@ public sealed class PortfolioPosition : BaseEntity
 
     public decimal MarketValue(decimal currentPrice) => Quantity * currentPrice;
     public decimal UnrealizedPnl(decimal currentPrice) => (currentPrice - AverageCost) * Quantity;
+    public decimal DailyPnl(decimal currentPrice, decimal previousClose) =>
+        (currentPrice - previousClose) * Quantity;
 }

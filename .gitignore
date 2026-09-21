@@ -45,3 +45,12 @@ backups/
 
 backups/
 *.dump
+
+# Env dosyaları
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# BIST Data Service (ayrı repo)
+bist-data-service/

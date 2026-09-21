@@ -43,6 +43,13 @@ public sealed class Asset : BaseEntity, IAggregateRoot
         Touch();
     }
 
+    /// <summary>Polling sağlayıcısından gelen önceki kapanış fiyatını set eder.</summary>
+    public void SetPreviousClose(decimal previousClose)
+    {
+        if (previousClose <= 0) return;
+        PreviousClose = previousClose;
+        Touch();
+    }
     /// <summary>Gün sonu — PreviousClose güncellenir, DailyVolume sıfırlanır.</summary>
     public void CloseDay(decimal closePrice)
     {

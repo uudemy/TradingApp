@@ -76,7 +76,8 @@ public sealed class MarketDataPollingService : BackgroundService
             {
                 var price = await provider.GetPriceAsync(asset.Symbol, ct);
 
-                asset.UpdatePrice(price.Price, 0m);
+                asset.SetPreviousClose(price.PreviousClose);
+                asset.UpdatePrice(price.Price, 0m); 
                 await cache.SetPriceAsync(price, TimeSpan.FromSeconds(90), ct);
                 await broadcaster.BroadcastPriceAsync(
                     asset.Symbol, price.Price, price.ChangePercent, price.DailyVolume, ct);

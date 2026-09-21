@@ -1,0 +1,15 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/.vs/
+**/.vscode/
+**/.idea/
+**/logs/
+**/backups/
+**/bist-data-service/
+.git/
+.gitignore
+*.md
+README*
+frontend/

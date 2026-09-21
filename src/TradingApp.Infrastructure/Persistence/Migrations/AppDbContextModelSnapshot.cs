@@ -272,8 +272,15 @@ namespace TradingApp.Infrastructure.Persistence.Migrations
                         .HasPrecision(18, 8)
                         .HasColumnType("numeric(18,8)");
 
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<Guid>("PortfolioId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("PurchaseDate")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("Quantity")
                         .HasPrecision(18, 8)

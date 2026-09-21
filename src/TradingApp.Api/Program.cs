@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using TradingApp.Infrastructure.Persistence;
 using TradingApp.Infrastructure.Persistence.Seed;
 using TradingApp.Api.Hubs;
+using TradingApp.Application.Abstractions;
 var builder = WebApplication.CreateBuilder(args);
 
 // ---------------- Serilog ----------------
@@ -40,12 +41,28 @@ builder.Services
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
             ClockSkew = TimeSpan.FromSeconds(30)
         };
+
+        // SignalR için query string'den token alma
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 builder.Services.AddAuthorization();
 
 // ---------------- API ----------------
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
+builder.Services.AddSingleton<INotificationPublisher, SignalRNotificationPublisher>();
 builder.Services.AddSingleton<TradingApp.Application.Abstractions.IMarketBroadcaster,
                               TradingApp.Api.Hubs.SignalRMarketBroadcaster>();
 builder.Services.AddEndpointsApiExplorer();
@@ -84,6 +101,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<MarketHub>("/hubs/market");
+app.MapHub<NotificationHub>("/hubs/notifications");
 app.MapAppHealthChecks();
 
 // --- Seed (Development'ta otomatik) ---

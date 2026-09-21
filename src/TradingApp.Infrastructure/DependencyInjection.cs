@@ -11,6 +11,7 @@ using TradingApp.Infrastructure.Persistence;
 using TradingApp.Infrastructure.Time;
 using TradingApp.Infrastructure.Matching;
 namespace TradingApp.Infrastructure;
+
 using TradingApp.Infrastructure.MarketData.Options;
 using TradingApp.Infrastructure.MarketData.Yahoo;
 using Microsoft.Extensions.Logging;
@@ -63,7 +64,7 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, BcryptPasswordHasher>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
-                // ---------- Matching Engine ----------
+        // ---------- Matching Engine ----------
         services.AddScoped<IOrderMatchingEngine, OrderMatchingEngine>();
 
         // ---------- Market Data ----------
@@ -80,9 +81,10 @@ public static class DependencyInjection
         services.AddSingleton<SymbolMapper>();
         services.AddScoped<YahooFinanceMarketDataProvider>();
 
-                // BIST Data Service
+        // BIST Data Service
         services.AddHttpClient<BistDataServiceClient>();
         services.AddScoped<BistDataServiceProvider>();
+        services.AddScoped<IBistAssetSyncService, BistAssetSyncService>();
 
         // CoinMarketCap
         services.AddHttpClient<CoinMarketCapClient>();
@@ -96,38 +98,38 @@ public static class DependencyInjection
         var provider = configuration[$"{MarketDataOptions.SectionName}:Provider"] ?? "Mock";
         var fallback = configuration.GetValue<bool>($"{MarketDataOptions.SectionName}:FallbackToMock");
 
-              services.AddScoped<IMarketDataProvider>(sp =>
-        {
-            var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-            var log = loggerFactory.CreateLogger<FallbackMarketDataProvider>();
+        services.AddScoped<IMarketDataProvider>(sp =>
+  {
+      var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+      var log = loggerFactory.CreateLogger<FallbackMarketDataProvider>();
 
-            // Sıralı fallback zinciri
-            var chain = new List<IMarketDataProvider>();
+      // Sıralı fallback zinciri
+      var chain = new List<IMarketDataProvider>();
 
-            // 1. Birincil (config'ten)
-            if (string.Equals(provider, "Yahoo", StringComparison.OrdinalIgnoreCase))
-                chain.Add(sp.GetRequiredService<YahooFinanceMarketDataProvider>());
+      // 1. Birincil (config'ten)
+      if (string.Equals(provider, "Yahoo", StringComparison.OrdinalIgnoreCase))
+          chain.Add(sp.GetRequiredService<YahooFinanceMarketDataProvider>());
 
-            // 2. BIST Data Service (sadece TRY assetler için ideal)
-            chain.Add(sp.GetRequiredService<BistDataServiceProvider>());
+      // 2. BIST Data Service (sadece TRY assetler için ideal)
+      chain.Add(sp.GetRequiredService<BistDataServiceProvider>());
 
-            // 3. CoinMarketCap (kripto)
-            chain.Add(sp.GetRequiredService<CoinMarketCapProvider>());
+      // 3. CoinMarketCap (kripto)
+      chain.Add(sp.GetRequiredService<CoinMarketCapProvider>());
 
-            // 4. Stooq (ABD hisseleri)
-            chain.Add(sp.GetRequiredService<StooqProvider>());
+      // 4. Stooq (ABD hisseleri)
+      chain.Add(sp.GetRequiredService<StooqProvider>());
 
-            // 5. Mock (son çare)
-            if (fallback)
-                chain.Add(sp.GetRequiredService<MockMarketDataProvider>());
+      // 5. Mock (son çare)
+      if (fallback)
+          chain.Add(sp.GetRequiredService<MockMarketDataProvider>());
 
-            // Zinciri birleştir
-            IMarketDataProvider result = chain[0];
-            for (int i = 1; i < chain.Count; i++)
-                result = new FallbackMarketDataProvider(result, chain[i], log);
+      // Zinciri birleştir
+      IMarketDataProvider result = chain[0];
+      for (int i = 1; i < chain.Count; i++)
+          result = new FallbackMarketDataProvider(result, chain[i], log);
 
-            return result;
-        });
+      return result;
+  });
 
         // Background polling (Yahoo) veya simülasyon (Mock)
         if (string.Equals(provider, "Yahoo", StringComparison.OrdinalIgnoreCase))
@@ -138,6 +140,10 @@ public static class DependencyInjection
         {
             services.AddHostedService<MarketDataSimulationService>();
         }
+        // Price alert monitor (her zaman çalışır)
+        services.AddHostedService<PriceAlertMonitorService>();
         return services;
+
+
     }
 }

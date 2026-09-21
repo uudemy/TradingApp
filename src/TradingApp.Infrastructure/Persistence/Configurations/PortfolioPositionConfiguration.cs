@@ -15,6 +15,7 @@ public sealed class PortfolioPositionConfiguration : IEntityTypeConfiguration<Po
         b.Property(x => x.LockedQuantity).HasPrecision(18, 8);
         b.Property(x => x.AverageCost).HasPrecision(18, 8);
         b.Property(x => x.RealizedPnl).HasPrecision(18, 8);
+        b.Property(x => x.Notes).HasMaxLength(500);
 
         b.Ignore(x => x.AvailableQuantity);
 

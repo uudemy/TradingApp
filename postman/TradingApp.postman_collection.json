@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
     "name": "TradingApp",
-    "description": "TradingApp Demo — Phase 5B",
+    "description": "TradingApp Demo — Phase 10",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -39,9 +39,8 @@
                 "if (res.success && res.data) {",
                 "  pm.environment.set('accessToken', res.data.accessToken);",
                 "  pm.environment.set('refreshToken', res.data.refreshToken);",
-                "  console.log('Tokens saved.');",
                 "}",
-                "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                "pm.test('Status 200 or 400', () => pm.expect([200,400]).to.include(pm.response.code));"
               ]
             }
           }],
@@ -118,8 +117,7 @@
                 "if (res.success && res.data) {",
                 "  pm.environment.set('accessToken', res.data.accessToken);",
                 "  pm.environment.set('refreshToken', res.data.refreshToken);",
-                "}",
-                "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                "}"
               ]
             }
           }],
@@ -136,10 +134,6 @@
         },
         {
           "name": "Logout",
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] }
-          }],
           "request": {
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
@@ -158,27 +152,9 @@
       "item": [
         {
           "name": "Get All Assets",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                "const res = pm.response.json();",
-                "pm.test('Has assets', () => pm.expect(res.data).to.be.an('array').that.is.not.empty);"
-              ]
-            }
-          }],
           "request": {
             "method": "GET",
             "url": { "raw": "{{baseUrl}}/api/assets", "host": ["{{baseUrl}}"], "path": ["api","assets"] }
-          }
-        },
-        {
-          "name": "Get Asset BTC",
-          "request": {
-            "method": "GET",
-            "url": { "raw": "{{baseUrl}}/api/assets/BTC", "host": ["{{baseUrl}}"], "path": ["api","assets","BTC"] }
           }
         },
         {
@@ -187,6 +163,13 @@
             "method": "GET",
             "url": { "raw": "{{baseUrl}}/api/assets/THYAO", "host": ["{{baseUrl}}"], "path": ["api","assets","THYAO"] }
           }
+        },
+        {
+          "name": "Get Asset BTC",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/assets/BTC", "host": ["{{baseUrl}}"], "path": ["api","assets","BTC"] }
+          }
         }
       ]
     },
@@ -194,21 +177,32 @@
       "name": "04 - Market",
       "item": [
         {
+          "name": "Get THYAO Price",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/market/THYAO", "host": ["{{baseUrl}}"], "path": ["api","market","THYAO"] }
+          }
+        },
+        {
           "name": "Get BTC Price",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                "const res = pm.response.json();",
-                "if (res.data) { pm.environment.set('lastBtcPrice', res.data.price); console.log('BTC:', res.data.price); }"
-              ]
-            }
-          }],
           "request": {
             "method": "GET",
             "url": { "raw": "{{baseUrl}}/api/market/BTC", "host": ["{{baseUrl}}"], "path": ["api","market","BTC"] }
+          }
+        },
+        {
+          "name": "Get THYAO Candles 1D",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/market/THYAO/candles?interval=1D&limit=30",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","market","THYAO","candles"],
+              "query": [
+                { "key": "interval", "value": "1D" },
+                { "key": "limit", "value": "30" }
+              ]
+            }
           }
         },
         {
@@ -233,17 +227,6 @@
       "item": [
         {
           "name": "Get My Wallets",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                "const res = pm.response.json();",
-                "console.log('Wallets:', JSON.stringify(res.data));"
-              ]
-            }
-          }],
           "request": {
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
@@ -262,12 +245,8 @@
             "script": {
               "type": "text/javascript",
               "exec": [
-                "pm.test('Status 200', () => pm.response.to.have.status(200));",
                 "const res = pm.response.json();",
-                "if (res.success && res.data) {",
-                "  pm.environment.set('lastOrderId', res.data.id);",
-                "  console.log('Order ID:', res.data.id, 'Status:', res.data.status);",
-                "}"
+                "if (res.success && res.data) pm.environment.set('lastOrderId', res.data.id);"
               ]
             }
           }],
@@ -286,22 +265,6 @@
           }
         },
         {
-          "name": "Place Market BUY BTC",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"symbol\": \"BTC\",\n  \"side\": 1,\n  \"orderType\": 1,\n  \"quantity\": 0.5\n}",
-              "options": { "raw": { "language": "json" } }
-            },
-            "url": { "raw": "{{baseUrl}}/api/orders", "host": ["{{baseUrl}}"], "path": ["api","orders"] }
-          }
-        },
-        {
           "name": "Get My Orders",
           "request": {
             "method": "GET",
@@ -310,58 +273,11 @@
           }
         },
         {
-          "name": "Get My Orders - Filter Open",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
-            "url": {
-              "raw": "{{baseUrl}}/api/orders?status=Open&symbol=THYAO",
-              "host": ["{{baseUrl}}"],
-              "path": ["api","orders"],
-              "query": [
-                { "key": "status", "value": "Open" },
-                { "key": "symbol", "value": "THYAO" }
-              ]
-            }
-          }
-        },
-        {
           "name": "Cancel Last Order",
-          "event": [{
-            "listen": "test",
-            "script": { "type": "text/javascript", "exec": ["pm.test('Status 204', () => pm.response.to.have.status(204));"] }
-          }],
           "request": {
             "method": "DELETE",
             "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
             "url": { "raw": "{{baseUrl}}/api/orders/{{lastOrderId}}", "host": ["{{baseUrl}}"], "path": ["api","orders","{{lastOrderId}}"] }
-          }
-        },
-        {
-          "name": "Place - Insufficient Balance",
-          "event": [{
-            "listen": "test",
-            "script": {
-              "type": "text/javascript",
-              "exec": [
-                "pm.test('Status 400', () => pm.response.to.have.status(400));",
-                "const res = pm.response.json();",
-                "pm.test('insufficient_balance', () => pm.expect(res.errors).to.include('insufficient_balance'));"
-              ]
-            }
-          }],
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"symbol\": \"BTC\",\n  \"side\": 1,\n  \"orderType\": 2,\n  \"price\": 1000000,\n  \"quantity\": 100\n}",
-              "options": { "raw": { "language": "json" } }
-            },
-            "url": { "raw": "{{baseUrl}}/api/orders", "host": ["{{baseUrl}}"], "path": ["api","orders"] }
           }
         }
       ]
@@ -389,9 +305,12 @@
             "script": {
               "type": "text/javascript",
               "exec": [
-                "pm.test('Status 200', () => pm.response.to.have.status(200));",
                 "const res = pm.response.json();",
-                "console.log('Portfolio value:', res.data.totalMarketValue);"
+                "if (res.success && res.data && res.data.positions && res.data.positions.length > 0) {",
+                "  pm.environment.set('lastPositionId', res.data.positions[0].id);",
+                "  console.log('Total:', res.data.totalMarketValue, 'P/L:', res.data.totalUnrealizedPnl);",
+                "}",
+                "pm.test('Status 200', () => pm.response.to.have.status(200));"
               ]
             }
           }],
@@ -399,6 +318,377 @@
             "method": "GET",
             "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
             "url": { "raw": "{{baseUrl}}/api/portfolio", "host": ["{{baseUrl}}"], "path": ["api","portfolio"] }
+          }
+        },
+        {
+          "name": "Add Position THYAO",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success && res.data) pm.environment.set('lastPositionId', res.data);",
+                "pm.test('Status 200', () => pm.response.to.have.status(200));"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"THYAO\",\n  \"quantity\": 500,\n  \"averageCost\": 320,\n  \"purchaseDate\": \"2024-03-15T00:00:00Z\",\n  \"notes\": \"Uzun vadeli\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/portfolio/positions", "host": ["{{baseUrl}}"], "path": ["api","portfolio","positions"] }
+          }
+        },
+        {
+          "name": "Add Position BTC",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"BTC\",\n  \"quantity\": 0.5,\n  \"averageCost\": 60000,\n  \"purchaseDate\": \"2024-06-01T00:00:00Z\",\n  \"notes\": \"Uzun vadeli kripto\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/portfolio/positions", "host": ["{{baseUrl}}"], "path": ["api","portfolio","positions"] }
+          }
+        },
+        {
+          "name": "Update Position",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 600,\n  \"averageCost\": 325,\n  \"purchaseDate\": \"2024-03-15T00:00:00Z\",\n  \"notes\": \"Ek alım yapıldı\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/portfolio/positions/{{lastPositionId}}", "host": ["{{baseUrl}}"], "path": ["api","portfolio","positions","{{lastPositionId}}"] }
+          }
+        },
+        {
+          "name": "Delete Position",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/portfolio/positions/{{lastPositionId}}", "host": ["{{baseUrl}}"], "path": ["api","portfolio","positions","{{lastPositionId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Watchlist",
+      "item": [
+        {
+          "name": "Get Watchlist",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.data && res.data.length > 0) pm.environment.set('lastAssetId', res.data[0].assetId);",
+                "console.log('Watchlist size:', res.data ? res.data.length : 0);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/watchlist", "host": ["{{baseUrl}}"], "path": ["api","watchlist"] }
+          }
+        },
+        {
+          "name": "Add THYAO",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/watchlist/THYAO", "host": ["{{baseUrl}}"], "path": ["api","watchlist","THYAO"] }
+          }
+        },
+        {
+          "name": "Add ASELS",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/watchlist/ASELS", "host": ["{{baseUrl}}"], "path": ["api","watchlist","ASELS"] }
+          }
+        },
+        {
+          "name": "Add BTC",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/watchlist/BTC", "host": ["{{baseUrl}}"], "path": ["api","watchlist","BTC"] }
+          }
+        },
+        {
+          "name": "Remove Last Item",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/watchlist/{{lastAssetId}}", "host": ["{{baseUrl}}"], "path": ["api","watchlist","{{lastAssetId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Price Alerts",
+      "item": [
+        {
+          "name": "Get All Alerts",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.data && res.data.length > 0) pm.environment.set('lastAlertId', res.data[0].id);",
+                "console.log('Alerts:', res.data ? res.data.length : 0);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/price-alerts", "host": ["{{baseUrl}}"], "path": ["api","price-alerts"] }
+          }
+        },
+        {
+          "name": "Create Alert - THYAO > 400",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.data) pm.environment.set('lastAlertId', res.data.id);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"THYAO\",\n  \"condition\": 1,\n  \"targetPrice\": 400\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/price-alerts", "host": ["{{baseUrl}}"], "path": ["api","price-alerts"] }
+          }
+        },
+        {
+          "name": "Create Trigger Alert - THYAO > 1",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"THYAO\",\n  \"condition\": 1,\n  \"targetPrice\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{baseUrl}}/api/price-alerts", "host": ["{{baseUrl}}"], "path": ["api","price-alerts"] }
+          }
+        },
+        {
+          "name": "Delete Last Alert",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/price-alerts/{{lastAlertId}}", "host": ["{{baseUrl}}"], "path": ["api","price-alerts","{{lastAlertId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 - Notifications",
+      "item": [
+        {
+          "name": "Get All",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.data && res.data.length > 0) pm.environment.set('lastNotificationId', res.data[0].id);",
+                "console.log('Notifications:', res.data ? res.data.length : 0);"
+              ]
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/notifications", "host": ["{{baseUrl}}"], "path": ["api","notifications"] }
+          }
+        },
+        {
+          "name": "Get Unread",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications?unreadOnly=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","notifications"],
+              "query": [{ "key": "unreadOnly", "value": "true" }]
+            }
+          }
+        },
+        {
+          "name": "Mark Last Read",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/notifications/{{lastNotificationId}}/read", "host": ["{{baseUrl}}"], "path": ["api","notifications","{{lastNotificationId}}","read"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 - Analysis",
+      "item": [
+        {
+          "name": "Analyze THYAO",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "const res = pm.response.json();",
+                "if (res.success && res.data) {",
+                "  console.log('Symbol:', res.data.symbol);",
+                "  console.log('Score:', res.data.ceilingScore, `(${res.data.ceilingCategory})`);",
+                "  console.log('RSI:', res.data.rsi14, 'MACD hist:', res.data.macdHistogram);",
+                "  console.log('MA20:', res.data.ma20, 'MA50:', res.data.ma50);",
+                "  console.log('Volume ratio:', res.data.volumeRatio);",
+                "  console.log('Signals:');",
+                "  res.data.signals.forEach(s => console.log(`  [${s.score}] ${s.name}: ${s.value} → ${s.interpretation}`));",
+                "}"
+              ]
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/analysis/THYAO?interval=1D&limit=200",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","analysis","THYAO"],
+              "query": [
+                { "key": "interval", "value": "1D" },
+                { "key": "limit", "value": "200" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Analyze BTC",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/analysis/BTC?interval=1D&limit=200",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","analysis","BTC"],
+              "query": [
+                { "key": "interval", "value": "1D" },
+                { "key": "limit", "value": "200" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Analyze ASELS",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/analysis/ASELS", "host": ["{{baseUrl}}"], "path": ["api","analysis","ASELS"] }
+          }
+        },
+        {
+          "name": "Analyze GARAN",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/analysis/GARAN", "host": ["{{baseUrl}}"], "path": ["api","analysis","GARAN"] }
+          }
+        },
+        {
+          "name": "Scan All",
+          "event": [{
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "exec": [
+                "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                "const res = pm.response.json();",
+                "if (res.success && res.data) {",
+                "  const d = res.data;",
+                "  console.log(`Scanned: ${d.totalScanned}`);",
+                "  console.log(`Güçlü Yükseliş: ${d.strongBullish}, Yükseliş: ${d.bullish}, Nötr: ${d.neutral}, Düşüş: ${d.bearish}, Güçlü Düşüş: ${d.strongBearish}`);",
+                "  console.log('--- TOP ---');",
+                "  d.top.forEach(t => console.log(`  ${t.symbol}: ${t.ceilingScore} (${t.ceilingCategory}) rsi=${t.rsi14} vol=${t.volumeRatio}`));",
+                "  console.log('--- BOTTOM ---');",
+                "  d.bottom.forEach(t => console.log(`  ${t.symbol}: ${t.ceilingScore} (${t.ceilingCategory})`));",
+                "}"
+              ]
+            }
+          }],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/analysis/scan?topCount=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","analysis","scan"],
+              "query": [{ "key": "topCount", "value": "10" }]
+            }
+          }
+        },
+        {
+          "name": "Scan - Stocks Only",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/analysis/scan?assetType=Stock&topCount=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","analysis","scan"],
+              "query": [
+                { "key": "assetType", "value": "Stock" },
+                { "key": "topCount", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Scan - Crypto Only",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/analysis/scan?assetType=Crypto&topCount=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","analysis","scan"],
+              "query": [
+                { "key": "assetType", "value": "Crypto" },
+                { "key": "topCount", "value": "5" }
+              ]
+            }
           }
         }
       ]

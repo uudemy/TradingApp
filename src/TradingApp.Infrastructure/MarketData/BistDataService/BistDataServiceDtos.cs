@@ -2,16 +2,37 @@ using System.Text.Json.Serialization;
 
 namespace TradingApp.Infrastructure.MarketData.BistDataService;
 
+/// <summary>
+/// BIST Data Service /all ve /quotes endpoint yanıtı.
+/// Gerçek JSON:
+/// {
+///   "market": "OPEN",
+///   "count": 627,
+///   "last_update": "2026-09-18T...",
+///   "is_stale": false,
+///   "delayed": true,
+///   "quotes": [ { "symbol": "THYAO", "price": 342.5, ... } ]
+/// }
+/// </summary>
 public sealed class BistAllResponse
 {
-    [JsonPropertyName("data")]
-    public List<BistQuote>? Data { get; set; }
-
-    [JsonPropertyName("updated_at")]
-    public string? UpdatedAt { get; set; }
+    [JsonPropertyName("market")]
+    public string? Market { get; set; }
 
     [JsonPropertyName("count")]
     public int? Count { get; set; }
+
+    [JsonPropertyName("last_update")]
+    public string? LastUpdate { get; set; }
+
+    [JsonPropertyName("is_stale")]
+    public bool? IsStale { get; set; }
+
+    [JsonPropertyName("delayed")]
+    public bool? Delayed { get; set; }
+
+    [JsonPropertyName("quotes")]
+    public List<BistQuote>? Quotes { get; set; }
 }
 
 public sealed class BistQuote
@@ -45,6 +66,15 @@ public sealed class BistQuote
 
     [JsonPropertyName("open")]
     public decimal? Open { get; set; }
+
+    [JsonPropertyName("currency")]
+    public string? Currency { get; set; }
+
+    [JsonPropertyName("is_stale")]
+    public bool? IsStale { get; set; }
+
+    [JsonPropertyName("last_update")]
+    public string? LastUpdate { get; set; }
 }
 
 public sealed class BistHistoryResponse
