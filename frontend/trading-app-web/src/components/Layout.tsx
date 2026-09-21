@@ -5,6 +5,7 @@ import NotificationBell from './NotificationBell';
 
 const nav = [
   { to: '/dashboard', label: 'Dashboard' },
+  { to: '/screener',  label: 'Fırsat Tarayıcı' },
   { to: '/markets',   label: 'Piyasalar' },
   { to: '/watchlist', label: 'İzleme Listesi' },
   { to: '/portfolio', label: 'Portföyüm' },

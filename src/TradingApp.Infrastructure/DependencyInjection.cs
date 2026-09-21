@@ -71,6 +71,7 @@ public static class DependencyInjection
         services.Configure<MarketDataOptions>(configuration.GetSection(MarketDataOptions.SectionName));
 
         services.AddScoped<IMarketDataCache, RedisMarketDataCache>();
+        services.AddScoped<IScreenerCache, RedisScreenerCache>();
         services.AddSingleton<ICandleStore, CandleStore>();
 
         // Mock her zaman kayıtlı (fallback için)

@@ -8,7 +8,10 @@ namespace TradingApp.Infrastructure.MarketData;
 public sealed class RedisMarketDataCache : IMarketDataCache
 {
     private const string AssetListKey = "market:assets:list";
+
     private static string PriceKey(string symbol) => $"market:price:{symbol}";
+    private static string CandlesKey(string symbol, string interval) =>
+        $"market:candles:{symbol}:{interval.ToUpperInvariant()}";
 
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
@@ -29,6 +32,17 @@ public sealed class RedisMarketDataCache : IMarketDataCache
 
     public async Task SetPriceAsync(MarketPriceDto price, TimeSpan ttl, CancellationToken ct = default)
         => await SetAsync(PriceKey(price.Symbol.ToUpperInvariant()), price, ttl, ct);
+
+    public async Task<IReadOnlyCollection<CandleDto>?> GetCandlesAsync(
+        string symbol, string interval, CancellationToken ct = default)
+        => await GetAsync<CandleDto[]>(CandlesKey(symbol, interval), ct);
+
+    public async Task SetCandlesAsync(
+        string symbol, string interval,
+        IReadOnlyCollection<CandleDto> candles,
+        TimeSpan ttl,
+        CancellationToken ct = default)
+        => await SetAsync(CandlesKey(symbol, interval), candles.ToArray(), ttl, ct);
 
     public Task InvalidateAssetListAsync(CancellationToken ct = default)
         => _cache.RemoveAsync(AssetListKey, ct);

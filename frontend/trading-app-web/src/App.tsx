@@ -1,15 +1,15 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './components/Layout';
-import ProtectedRoute from './components/ProtectedRoute';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import DashboardPage from './pages/DashboardPage';
-import MarketsPage from './pages/MarketsPage';
-import TradingPage from './pages/TradingPage';
-import WatchlistPage from './pages/WatchlistPage';
-import PortfolioPage from './pages/PortfolioPage';
-import AlertsPage from './pages/AlertsPage';
-
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import Layout from "./components/Layout";
+import ProtectedRoute from "./components/ProtectedRoute";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import DashboardPage from "./pages/DashboardPage";
+import MarketsPage from "./pages/MarketsPage";
+import TradingPage from "./pages/TradingPage";
+import WatchlistPage from "./pages/WatchlistPage";
+import PortfolioPage from "./pages/PortfolioPage";
+import AlertsPage from "./pages/AlertsPage";
+import ScreenerPage from "./pages/ScreenerPage";
 export default function App() {
   return (
     <BrowserRouter>
@@ -21,6 +21,7 @@ export default function App() {
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/markets" element={<MarketsPage />} />
+            <Route path="/screener" element={<ScreenerPage />} />
             <Route path="/trading/:symbol" element={<TradingPage />} />
             <Route path="/watchlist" element={<WatchlistPage />} />
             <Route path="/portfolio" element={<PortfolioPage />} />

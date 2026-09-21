@@ -146,3 +146,48 @@ export interface NotificationPayload {
   type: string;
   createdAt: string;
 }
+
+
+export interface IndicatorPointDto {
+  time: string;
+  value: number | null;
+}
+
+export interface MacdPointDto {
+  time: string;
+  macd: number | null;
+  signal: number | null;
+  histogram: number | null;
+}
+
+export interface IndicatorSeriesDto {
+  ma20: IndicatorPointDto[];
+  ma50: IndicatorPointDto[];
+  ma200: IndicatorPointDto[];
+  bollingerUpper: IndicatorPointDto[];
+  bollingerMiddle: IndicatorPointDto[];
+  bollingerLower: IndicatorPointDto[];
+  rsi: IndicatorPointDto[];
+  macd: MacdPointDto[];
+}
+
+export interface AnalysisScanItemDto {
+  assetId: string;
+  symbol: string;
+  name: string;
+  assetType: string;
+  currentPrice: number;
+  changePercent: number;
+  rsi14: number | null;
+  volumeRatio: number | null;
+  ceilingScore: number;
+  ceilingCategory: string;
+}
+
+export interface ScreenerResultDto {
+  totalScanned: number;
+  totalMatched: number;
+  interval: string;
+  items: AnalysisScanItemDto[];
+  scannedAt: string;
+}

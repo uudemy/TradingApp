@@ -62,6 +62,7 @@ public sealed class AnalyzeSymbolQueryHandler
 
         var changePct = asset.PreviousClose == 0m ? 0m
             : Math.Round((asset.CurrentPrice - asset.PreviousClose) / asset.PreviousClose * 100m, 4);
+        var series = BuildIndicatorSeries(quotes);
 
         return new AnalysisDto(
             asset.Id, asset.Symbol, asset.Name, asset.AssetType.ToString(),
@@ -82,10 +83,65 @@ public sealed class AnalyzeSymbolQueryHandler
             Math.Round(volumeRatio, 2),
 
             score, category, signals,
-            DateTimeOffset.UtcNow);
+            DateTimeOffset.UtcNow,
+            series);
+
     }
 
     /// <summary>double? → decimal? (4 basamak yuvarlanmış).</summary>
     private static decimal? R(double? v)
         => v.HasValue ? Math.Round((decimal)v.Value, 4) : null;
+    /// <summary>Skender'den tüm serileri çeker ve DTO'ya map eder.</summary>
+    private static IndicatorSeriesDto BuildIndicatorSeries(IReadOnlyList<Quote> quotes)
+    {
+        static DateTimeOffset ToTime(DateTime dt)
+            => new DateTimeOffset(DateTime.SpecifyKind(dt, DateTimeKind.Utc));
+
+        var ma20 = quotes.GetSma(20)
+            .Where(x => x.Sma.HasValue)
+            .Select(x => new IndicatorPointDto(ToTime(x.Date), (decimal)x.Sma!.Value))
+            .ToList();
+
+        var ma50 = quotes.GetSma(50)
+            .Where(x => x.Sma.HasValue)
+            .Select(x => new IndicatorPointDto(ToTime(x.Date), (decimal)x.Sma!.Value))
+            .ToList();
+
+        var ma200 = quotes.Count >= 200
+            ? quotes.GetSma(200)
+                .Where(x => x.Sma.HasValue)
+                .Select(x => new IndicatorPointDto(ToTime(x.Date), (decimal)x.Sma!.Value))
+                .ToList()
+            : new List<IndicatorPointDto>();
+
+        var bb = quotes.GetBollingerBands(20, 2).ToList();
+
+        var bbUpper = bb.Where(x => x.UpperBand.HasValue)
+            .Select(x => new IndicatorPointDto(ToTime(x.Date), (decimal)x.UpperBand!.Value))
+            .ToList();
+
+        var bbMid = bb.Where(x => x.Sma.HasValue)
+            .Select(x => new IndicatorPointDto(ToTime(x.Date), (decimal)x.Sma!.Value))
+            .ToList();
+
+        var bbLower = bb.Where(x => x.LowerBand.HasValue)
+            .Select(x => new IndicatorPointDto(ToTime(x.Date), (decimal)x.LowerBand!.Value))
+            .ToList();
+
+        var rsi = quotes.GetRsi(14)
+            .Where(x => x.Rsi.HasValue)
+            .Select(x => new IndicatorPointDto(ToTime(x.Date), (decimal)x.Rsi!.Value))
+            .ToList();
+
+        var macd = quotes.GetMacd(12, 26, 9)
+            .Where(x => x.Macd.HasValue || x.Signal.HasValue || x.Histogram.HasValue)
+            .Select(x => new MacdPointDto(
+                ToTime(x.Date),
+                x.Macd.HasValue ? (decimal)x.Macd.Value : null,
+                x.Signal.HasValue ? (decimal)x.Signal.Value : null,
+                x.Histogram.HasValue ? (decimal)x.Histogram.Value : null))
+            .ToList();
+
+        return new IndicatorSeriesDto(ma20, ma50, ma200, bbUpper, bbMid, bbLower, rsi, macd);
+    }
 }

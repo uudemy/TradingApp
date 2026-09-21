@@ -7,6 +7,8 @@ import CandlestickChart from '../components/CandlestickChart';
 import AnalysisPanel from '../components/AnalysisPanel';
 import { useMarketHub } from '../hooks/useMarketHub';
 
+import type { IndicatorSeriesDto } from '../types/api';
+
 interface AnalysisResponse {
   assetId: string;
   symbol: string;
@@ -22,10 +24,10 @@ interface AnalysisResponse {
   ceilingScore: number;
   ceilingCategory: string;
   signals: any[];
+  series: IndicatorSeriesDto | null;
 }
 
-const INTERVALS = ['1m', '5m', '15m', '1h', '4h', '1D', '1W'];
-
+const INTERVALS = ['1m', '5m', '15m', '1h', '4h', '1D', '1W', '1MO'];
 const fmt = (n: number | null | undefined, d = 2) =>
   n == null ? '—' : n.toLocaleString('tr-TR', { minimumFractionDigits: d, maximumFractionDigits: d });
 
@@ -40,6 +42,13 @@ export default function TradingPage() {
   const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null);
   const [interval, setInterval] = useState('1D');
   const [loading, setLoading] = useState(true);
+    // Indicator toggle'ları
+  const [showMa20, setShowMa20] = useState(true);
+  const [showMa50, setShowMa50] = useState(true);
+  const [showMa200, setShowMa200] = useState(false);
+  const [showBollinger, setShowBollinger] = useState(false);
+  const [showMacd, setShowMacd] = useState(true);
+  const [showRsi, setShowRsi] = useState(true);
 
   const { connected } = useMarketHub((u) => {
     if (u.symbol === symbol?.toUpperCase()) setLivePrice(u.price);
@@ -128,16 +137,34 @@ export default function TradingPage() {
                   interval === iv ? 'bg-[#1d2b48] text-white' : 'text-[#8b9bb4] hover:text-white'
                 }`}
               >
-                {iv}
+                {iv === '1MO' ? '1A' : iv}
               </button>
             ))}
+          </div>
+
+                    {/* Indicator toggle'ları */}
+          <div className="flex flex-wrap gap-2">
+            <Toggle label="MA20" color="#4fc3f7" active={showMa20} onClick={() => setShowMa20(!showMa20)} />
+            <Toggle label="MA50" color="#fbbf24" active={showMa50} onClick={() => setShowMa50(!showMa50)} />
+            <Toggle label="MA200" color="#c084fc" active={showMa200} onClick={() => setShowMa200(!showMa200)} />
+            <Toggle label="Bollinger" color="#8b9bb4" active={showBollinger} onClick={() => setShowBollinger(!showBollinger)} />
+            <Toggle label="MACD" color="#4fc3f7" active={showMacd} onClick={() => setShowMacd(!showMacd)} />
+            <Toggle label="RSI" color="#c084fc" active={showRsi} onClick={() => setShowRsi(!showRsi)} />
           </div>
 
           {/* Chart */}
           <div className="bg-[#111a2e] border border-[#1f2a44] rounded-lg overflow-hidden p-3">
             {candles.length > 0 ? (
-              <CandlestickChart candles={candles} showVolume showMa20 />
-            ) : (
+                           <CandlestickChart
+                candles={candles}
+                series={analysis?.series ?? null}
+                showMa20={showMa20}
+                showMa50={showMa50}
+                showMa200={showMa200}
+                showBollinger={showBollinger}
+                showMacd={showMacd}
+                showRsi={showRsi}
+              />            ) : (
               <div className="h-[420px] flex items-center justify-center text-[#8b9bb4]">
                 Mum verisi yükleniyor...
               </div>
@@ -165,4 +192,23 @@ export default function TradingPage() {
       </div>
     </div>
   );
+
+  function Toggle({ label, color, active, onClick }: { label: string; color: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border transition ${
+        active
+          ? 'bg-[#1d2b48] border-[#4fc3f7] text-white'
+          : 'bg-[#111a2e] border-[#1f2a44] text-[#8b9bb4] hover:text-white'
+      }`}
+    >
+      <span
+        className="w-2 h-2 rounded-full"
+        style={{ background: active ? color : '#4a5568' }}
+      />
+      {label}
+    </button>
+  );
+}
 }

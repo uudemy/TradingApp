@@ -86,10 +86,12 @@ public sealed class YahooFinanceClient
         "5m"  => ("5m", "5d"),
         "15m" => ("15m", "5d"),
         "1h"  => ("60m", "1mo"),
-        "4h"  => ("60m", "3mo"),  // 4h için 1h çekilir, provider'da 4'lü gruplanır
-        "1D"  => ("1d", "1y"),
-        "1W"  => ("1wk", "5y"),
-        _     => ("1d", "1y")
+        "4h"  => ("60m", "3mo"),
+        "1D"  => ("1d", "2y"),
+        "1W"  => ("1wk", "10y"),
+        "1MO" => ("1mo", "10y"),    // 1 ay
+        "1M"  => ("1mo", "10y"),    // legacy fallback
+        _     => ("1d", "2y")
     };
 
     public static DateTimeOffset FromUnix(long unixSeconds)

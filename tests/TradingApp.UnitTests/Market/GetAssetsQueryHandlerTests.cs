@@ -30,6 +30,17 @@ public class GetAssetsQueryHandlerTests
         public Task SetPriceAsync(MarketPriceDto price, TimeSpan ttl, CancellationToken ct = default)
             => Task.CompletedTask;
 
+        public Task<IReadOnlyCollection<CandleDto>?> GetCandlesAsync(
+            string symbol, string interval, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyCollection<CandleDto>?>(null);
+
+        public Task SetCandlesAsync(
+            string symbol, string interval,
+            IReadOnlyCollection<CandleDto> candles,
+            TimeSpan ttl,
+            CancellationToken ct = default)
+            => Task.CompletedTask;
+
         public Task InvalidateAssetListAsync(CancellationToken ct = default) => Task.CompletedTask;
     }
 
